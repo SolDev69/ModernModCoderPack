@@ -19,7 +19,7 @@ import java.util.stream.Stream;
 public class MinecraftLongLaunchServiceDev extends CommonLaunch {
     @Override
     public String name() {
-        return "minecraftlongdev";
+        return "mmcpdev";
     }
 
     @SuppressWarnings("removal")
