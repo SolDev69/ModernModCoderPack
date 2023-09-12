@@ -22,12 +22,12 @@ plugins {
 
 rootProject.name = 'MinecraftLong2'
 
-include 'longloader'
+include 'modloader'
 include ':mcp'
 include ':clean'
-include ':mclong'
+include ':examplemod'
 
 project(":mcp").projectDir = file("projects/mcp")
 project(":clean").projectDir = file("projects/clean")
-project(":mclong").projectDir = file("projects/mclong")
+project(":examplemod").projectDir = file("projects/examplemod")
 

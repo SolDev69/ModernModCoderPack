@@ -30,9 +30,9 @@ abstract class LauncherJson extends DefaultTask {
     LauncherJson() {
         getOutput().convention(project.layout.buildDirectory.file('version.json'))
 
-        dependsOn(':longloader:jar', 'universalJar')
+        dependsOn(':modloader:jar', 'universalJar')
         getInput().from(project.tasks.universalJar.archiveFile,
-                project.project(':longloader').jar.archiveFile,
+                project.project(':modloader').jar.archiveFile,
                 vanilla)
                 
         project.afterEvaluate {

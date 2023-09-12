@@ -360,7 +360,7 @@ def sharedFmlonlyForge = { Project prj ->
                     JAR_SIGNER != null && t.state.failure == null
                 }
                 def jarsigner = JAR_SIGNER == null ? [:] : JAR_SIGNER
-                alias = 'mclong'
+                alias = 'examplemod'
                 storePass = jarsigner.storepass
                 keyPass = jarsigner.keypass
                 keyStore = jarsigner.keystore
@@ -372,7 +372,7 @@ def sharedFmlonlyForge = { Project prj ->
     }
 
     prj.tasks.userdevConfig {
-        def launchPrefix = prj.name == "mclong" ? "mclong" : "fml"
+        def launchPrefix = prj.name == "examplemod" ? "examplemod" : "fml"
         getArtifacts(prj, prj.configurations.installer, true).each { key, lib -> libraries.add(lib.name) }
         getArtifacts(prj, prj.configurations.moduleonly, true).each { key, lib ->
             libraries.add(lib.name)
@@ -404,14 +404,14 @@ def sharedFmlonlyForge = { Project prj ->
                 environment 'MOD_CLASSES', '{source_roots}'
                 environment 'MCP_MAPPINGS', '{mcp_mappings}'
 
-                if (prj.name == 'mclong') {
+                if (prj.name == 'examplemod') {
                     property 'forge.enableGameTest', 'true'
                 }
 
                 args '--launchTarget', "${launchPrefix}serveruserdev"
             }
 
-            if (prj.name == 'mclong') {
+            if (prj.name == 'examplemod') {
                 gameTestServer {
                     environment 'MOD_CLASSES', '{source_roots}'
                     environment 'MCP_MAPPINGS', '{mcp_mappings}'
@@ -486,7 +486,7 @@ def sharedFmlonlyForge = { Project prj ->
             run.args '--versionType', 'release'
         }
 
-        if (prj.name == 'mclong') {
+        if (prj.name == 'examplemod') {
             run.environment 'FORGE_SPEC', prj.SPEC_VERSION
         }
     }
@@ -502,7 +502,7 @@ def sharedFmlonlyForge = { Project prj ->
 
     def MODULE_PATH = Util.getArtifacts(prj, prj.configurations.moduleonly, false).values().collect{"libraries/${it.downloads.artifact.path}"}
     def tokens = [
-            TASK:          prj.name.equals('mclong') ? 'mclongserver' : 'fmlserver',
+            TASK:          prj.name.equals('examplemod') ? 'examplemodserver' : 'fmlserver',
             MAVEN_PATH:    prj.ext.MAVEN_PATH.toString(),
             FORGE_VERSION: FORGE_VERSION,
             MC_VERSION:    MC_VERSION,
@@ -516,7 +516,7 @@ def sharedFmlonlyForge = { Project prj ->
         doLast {
             def CLASS_PATH = Util.getArtifacts(prj, prj.configurations.installer, false).values().collect{"libraries/${it.downloads.artifact.path}"} +
             [
-                'libraries/' + Util.getMavenPath(rootProject.tasks.findByPath(':longloader:jar')),
+                'libraries/' + Util.getMavenPath(rootProject.tasks.findByPath(':modloader:jar')),
                 "libraries/net/minecraft/server/${MC_VERSION}-${MCP_VERSION}/server-${MC_VERSION}-${MCP_VERSION}-extra.jar"
             ]
             def claimed = CLASS_PATH.collect{ it.rsplit('/', 2)[0] }.toSet() // Allow us to override versions
@@ -564,7 +564,7 @@ project(':fmlonly') {
 
     ext {
         MCP_ARTIFACT = project(':mcp').mcp.config.get()
-        PACKED_DEPS = [':longloader:jar']
+        PACKED_DEPS = [':modloader:jar']
         MAVEN_PATH = "${group.replace('.', '/')}/${project.name}/${VERSION}"
     }
 
@@ -590,7 +590,7 @@ project(':fmlonly') {
 
     // TODO: Better coordination between project dependencies and the installer.
     dependencies {
-        implementation project(':longloader')
+        implementation project(':modloader')
         runtimeOnly "cpw.mods:bootstraplauncher:${BOOTSTRAPLAUNCHER_VERSION}"
     }
     dependencies sharedDeps
@@ -603,7 +603,7 @@ project(':fmlonly') {
         mappings channel: MAPPING_CHANNEL, version: MAPPING_VERSION
         runs {
             fmlonly_client {
-                args '--launchTarget', 'minecraftlong'
+                args '--launchTarget', 'mmcp'
                 ideaModule "${rootProject.name}.${project.name}.main"
 
                 mods {
@@ -624,7 +624,7 @@ project(':fmlonly') {
     sharedFmlonlyForge.call(project)
 
     task launcherJson(type: LauncherJson) {
-        packedDependencies = [':longloader:jar']
+        packedDependencies = [':modloader:jar']
         doFirst {
             def fmlonly_client = project(':fmlonly').patcher.runs.fmlonly_client
             json = [
@@ -870,7 +870,7 @@ project(':fmlonly') {
     afterEvaluate { prepareRuns.dependsOn(PACKED_DEPS) }
 }
 
-project(':mclong') {
+project(':examplemod') {
     evaluationDependsOn(':clean')
     apply plugin: 'java-library'
     apply plugin: 'net.neoforged.gradle.patcher'
@@ -923,7 +923,7 @@ project(':mclong') {
         // Essentially, the same as the old, except dropping the first number, and the builds are no longer unique.
         MCP_ARTIFACT = project(':mcp').mcp.config.get()
         VERSION_JSON = project(':mcp').file('build/mcp/downloadJson/version.json')
-        PACKED_DEPS = [':longloader:jar']
+        PACKED_DEPS = [':modloader:jar']
         MAVEN_PATH = "${group.replace('.', '/')}/${project.name}/${VERSION}"
     }
 
@@ -941,7 +941,7 @@ project(':mclong') {
         testImplementation 'org.junit.vintage:junit-vintage-engine:5.+'
         testImplementation 'org.opentest4j:opentest4j:1.2.0' // needed for junit 5
         testImplementation 'org.hamcrest:hamcrest-all:1.3' // needs advanced matching for list order
-        implementation project(':longloader')
+        implementation project(':modloader')
         runtimeOnly "cpw.mods:bootstraplauncher:${BOOTSTRAPLAUNCHER_VERSION}"
     }
     dependencies sharedDeps
@@ -956,18 +956,18 @@ project(':mclong') {
         sideAnnotationStrippers.from file("$rootDir/src/main/resources/forge.sas")
 
         runs {
-            mclong_client {
+            examplemod_client {
                 property 'eventbus.checkTypesOnDispatch', 'true'
-                args '--launchTarget', 'minecraftlongdev'
+                args '--launchTarget', 'mmcpdev'
                 ideaModule "${rootProject.name}.${project.name}.main"
                 mods {
                     minecraft { source sourceSets.main }
                 }
             }
 
-            mclong_test_client {
-                parent runs.mclong_client
-                taskName 'mclong_test_client'
+            examplemod_test_client {
+                parent runs.examplemod_client
+                taskName 'examplemod_test_client'
 
                 property 'forge.enableGameTest', 'true'
                 environment 'MOD_CLASSES', 'dummy' // Needed to work around FG limitation, FG will replace this!
@@ -979,7 +979,7 @@ project(':mclong') {
                 }
             }
 
-            mclong_server {
+            examplemod_server {
                 args '--launchTarget', 'forgeserverdev'
                 ideaModule "${rootProject.name}.${project.name}.main"
 
@@ -988,9 +988,9 @@ project(':mclong') {
                 }
             }
 
-            mclong_test_server {
-                parent runs.mclong_server
-                taskName 'mclong_test_server'
+            examplemod_test_server {
+                parent runs.examplemod_server
+                taskName 'examplemod_test_server'
 
                 property 'forge.enableGameTest', 'true'
                 environment 'MOD_CLASSES', 'dummy' // Needed to work around FG limitation, FG will replace this!
@@ -1002,8 +1002,8 @@ project(':mclong') {
                 }
             }
 
-            mclong_gameTestServer {
-                taskName 'mclong_gameTestServer'
+            examplemod_gameTestServer {
+                taskName 'examplemod_gameTestServer'
                 args '--launchTarget', 'forgegametestserverdev'
                 ideaModule "${rootProject.name}.${project.name}.main"
 
@@ -1012,9 +1012,9 @@ project(':mclong') {
                 }
             }
 
-            mclong_test_gameTestServer {
-                parent runs.mclong_gameTestServer
-                taskName 'mclong_test_gameTestServer'
+            examplemod_test_gameTestServer {
+                parent runs.examplemod_gameTestServer
+                taskName 'examplemod_test_gameTestServer'
 
                 ideaModule "${rootProject.name}.${project.name}.test"
 
@@ -1030,8 +1030,8 @@ project(':mclong') {
                     '--validate',
                     '--existing', sourceSets.main.resources.srcDirs[0]
                     ]
-            mclong_data {
-                taskName 'mclong_data'
+            examplemod_data {
+                taskName 'examplemod_data'
                 args '--launchTarget', 'forgedatadev'
                 ideaModule "${rootProject.name}.${project.name}.main"
 
@@ -1042,9 +1042,9 @@ project(':mclong') {
                 args forgeDataArgs
             }
 
-            mclong_test_data {
-                parent runs.mclong_data
-                taskName 'mclong_test_data'
+            examplemod_test_data {
+                parent runs.examplemod_data
+                taskName 'examplemod_test_data'
 
                 environment 'MOD_CLASSES', 'dummy' // Needed to work around FG limitation, FG will replace this!
 
@@ -1080,9 +1080,9 @@ project(':mclong') {
                 }
             }
 
-            mclong_mdk_data {
-                parent runs.mclong_data
-                taskName 'mclong_mdk_data'
+            examplemod_mdk_data {
+                parent runs.examplemod_data
+                taskName 'examplemod_mdk_data'
 
                 environment 'MOD_CLASSES', 'dummy' // Needed to work around FG limitation, FG will replace this!
 
@@ -1220,7 +1220,7 @@ project(':mclong') {
 
     tasks.register('fixPatchImports', FixPatchImports) {
         clean.set(rootProject.file('projects/clean/src/main/java'))
-        patched.set(rootProject.file('projects/mclong/src/main/java'))
+        patched.set(rootProject.file('projects/examplemod/src/main/java'))
     }
 
     genPatches {
@@ -1256,7 +1256,7 @@ project(':mclong') {
 
         inputJars.from(project.tasks.named('applyBaseCompatibilityJarBinPatches').flatMap { it.output })
         inputJars.from(baseForgeVersionProperty.map { inputVersion ->
-            def output = project.layout.buildDirectory.dir(name).map { it.file("mclong-${inputVersion}-universal.jar") }.get().asFile
+            def output = project.layout.buildDirectory.dir(name).map { it.file("examplemod-${inputVersion}-universal.jar") }.get().asFile
             project.rootProject.extensions.download.run {
                 src "https://maven.minecraftforge.net/net/minecraftforge/forge/${inputVersion}/forge-${inputVersion}-universal.jar"
                 dest output
@@ -1281,9 +1281,9 @@ project(':mclong') {
     }
 
     task launcherJson(type: LauncherJson) {
-        packedDependencies = [':longloader:jar']
+        packedDependencies = [':modloader:jar']
         doFirst {
-            def mclong_client = project(':mclong').patcher.runs.mclong_client
+            def examplemod_client = project(':examplemod').patcher.runs.examplemod_client
             json = [
                 _comment_: comment,
                 id: id,
@@ -1294,14 +1294,14 @@ project(':mclong') {
                 inheritsFrom: MC_VERSION,
                 logging: {},
                 arguments: [
-                    game: ['--launchTarget', 'minecraftlong',
+                    game: ['--launchTarget', 'mmcp',
                            '--fml.forgeVersion', FORGE_VERSION,
                            '--fml.mcVersion', MC_VERSION,
                            '--fml.forgeGroup', project.group,
                            '--fml.mcpVersion', MCP_VERSION],
                     jvm: ['-Djava.net.preferIPv6Addresses=system',
-                          "-DignoreList=${mclong_client.properties.ignoreList},\${version_name}.jar",
-                          "-DmergeModules=${mclong_client.properties.mergeModules}",
+                          "-DignoreList=${examplemod_client.properties.ignoreList},\${version_name}.jar",
+                          "-DmergeModules=${examplemod_client.properties.mergeModules}",
                           '-DlibraryDirectory=${library_directory}',
                           '-p', Util.getArtifacts(project, configurations.moduleonly, false).values().collect{'${library_directory}/' + it.downloads.artifact.path}.join('${classpath_separator}'),
                           '--add-modules', 'ALL-MODULE-PATH',
@@ -1583,7 +1583,7 @@ project(':mclong') {
     }
 
     tasks.register('genAllData') {
-        dependsOn 'mclong_data', 'mclong_mdk_data', 'mclong_test_data'
+        dependsOn 'examplemod_data', 'examplemod_mdk_data', 'examplemod_test_data'
     }
 
     tasks.eclipse.dependsOn('genEclipseRuns')
@@ -1601,7 +1601,7 @@ project(':mclong') {
 
     tasks.named('javadoc', Javadoc).configure {
         description 'Generates the combined javadocs for the FML projects and the main Forge project'
-        var includedProjects = [ ':longloader' ]
+        var includedProjects = [ ':modloader' ]
         source includedProjects.collect { project(it).sourceSets.main.allJava }
         classpath = classpath + files(includedProjects.collect { project(it).sourceSets.main.compileClasspath })
 
@@ -1700,7 +1700,7 @@ task setup() {  //These must be strings so that we can do lazy resolution. Else 
     dependsOn ':clean:extractMapped'
     if (symlinkValid)
         dependsOn ':fmlonly:extractMapped'
-    dependsOn ':mclong:extractMapped'
+    dependsOn ':examplemod:extractMapped'
 }
 
 if (symlinkValid)
@@ -1712,8 +1712,8 @@ if (System.env.TEAMCITY_VERSION) {
     //Only setup the CI environment if and only if the environment variables are set.
     tasks.configureTeamCity {
         doLast {
-            println "##teamcity[buildNumber '${project(':mclong').version}']"
-            println "##teamcity[setParameter name='env.PUBLISHED_JAVA_ARTIFACT_VERSION' value='${project(':mclong').version}']"
+            println "##teamcity[buildNumber '${project(':examplemod').version}']"
+            println "##teamcity[setParameter name='env.PUBLISHED_JAVA_ARTIFACT_VERSION' value='${project(':examplemod').version}']"
             println "##teamcity[setParameter name='env.PUBLISHED_JAVA_FML_ARTIFACT_VERSION' value='${project(':fmlonly').version}']"
         }
     }
